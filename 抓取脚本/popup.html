@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>抖音采集桥</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">视频脚本助手</div>
+      <h1>抖音采集桥</h1>
+      <p class="description">
+        只授权你填写的网站和抖音页面。采集会使用当前 Chrome 的抖音登录态。
+      </p>
+
+      <label for="app-url">线上网站地址</label>
+      <input id="app-url" type="url" placeholder="https://example.com" />
+      <button id="save" type="button">保存并授权本站</button>
+      <p id="status" role="status"></p>
+
+      <div class="actions">
+        <button id="open-app" class="secondary" type="button">打开网站</button>
+        <button id="open-douyin" class="secondary" type="button">打开抖音登录</button>
+      </div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

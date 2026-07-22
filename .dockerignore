@@ -1,0 +1,13 @@
+.git
+.next
+.worktrees
+node_modules
+.env*
+AGENTS.md
+docs
+测试素材
+({src
+0)
+0).join('
+n.includes('video')
+npm-debug.log*

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import ffmpegPath from 'ffmpeg-static';
 import type { PreflightResult } from '@/lib/types';
+import { resolveFfmpegPath } from '@/lib/ffmpeg';
 
 export async function GET() {
   const aiConfigured = !!process.env.AI_GATEWAY_API_KEY;
   const asrConfigured = !!process.env.ASR_API_URL;
-  const ffmpegInstalled = !!ffmpegPath;
-  const ready = aiConfigured;
+  const ffmpegInstalled = !!(await resolveFfmpegPath());
+  const ready = aiConfigured && ffmpegInstalled;
 
   const messages: string[] = [];
 

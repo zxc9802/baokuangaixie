@@ -3,7 +3,6 @@ import { spawn } from 'child_process';
 import { mkdtemp, open, readFile, rm, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import ffmpegPath from 'ffmpeg-static';
 import { subMonths, parseISO, isAfter } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import type {
@@ -18,6 +17,7 @@ import {
   buildAnalyzeVideoPrompt,
 } from './ai/prompts';
 import { VideoAnalysisSchema } from './schemas';
+import { resolveFfmpegPath } from './ffmpeg';
 
 const TIMEZONE = 'Asia/Shanghai';
 // Inline Gemini requests carry base64 data, so keep the raw file below 14 MB
@@ -306,8 +306,11 @@ async function compressVideoForInlineAnalysis(
   durationSeconds: number,
   signal: AbortSignal
 ): Promise<DownloadedVideo> {
+  const ffmpegPath = await resolveFfmpegPath();
   if (!ffmpegPath) {
-    throw new Error('内置 FFmpeg 不可用，无法压缩大于 14MB 的视频');
+    throw new Error(
+      'FFmpeg 不可用，无法压缩大于 14MB 的视频。请在服务器安装 FFmpeg 或配置 FFMPEG_PATH'
+    );
   }
 
   const safeDuration = Math.max(1, durationSeconds);

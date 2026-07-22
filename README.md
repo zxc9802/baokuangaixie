@@ -37,11 +37,24 @@ npm run dev
 
 ```bash
 AI_GATEWAY_BASE_URL=https://yunwu.ai/v1beta
-AI_GATEWAY_MODEL=gemini-3.1-flash-lite
+AI_GATEWAY_MODEL=gemini-3.5-flash-lite
 AI_GATEWAY_API_KEY=your-api-key
 ```
 
 `.env.local` 已加入 `.gitignore`，不会进入版本控制。
+
+## 线上部署
+
+仓库包含 `Dockerfile`。线上平台使用 Docker 部署时会自动安装系统 FFmpeg，
+并配置 `FFMPEG_PATH=/usr/bin/ffmpeg`，用于压缩超过 14MB 的视频。
+
+部署平台仍需手动配置以下三个 AI 环境变量：
+
+```bash
+AI_GATEWAY_BASE_URL=https://yunwu.ai/v1beta
+AI_GATEWAY_MODEL=gemini-3.5-flash-lite
+AI_GATEWAY_API_KEY=your-api-key
+```
 
 ## 功能模块
 

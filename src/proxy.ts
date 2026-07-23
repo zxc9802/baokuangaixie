@@ -3,13 +3,11 @@ import {
   getMainAppSessionCookieName,
   getMainAppSessionCookieOptions,
   getMainAppSsoLaunchUrl,
-  isMainAppSsoRequired,
   readMainAppSessionCookie,
   validateMainAppSession,
 } from './lib/main-app-sso';
 
 export async function proxy(request: NextRequest) {
-  if (!isMainAppSsoRequired()) return NextResponse.next();
   if (request.nextUrl.pathname === '/api/sso/callback') return NextResponse.next();
 
   const session = await readMainAppSessionCookie(request.cookies.get(getMainAppSessionCookieName())?.value);

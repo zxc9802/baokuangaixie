@@ -2,6 +2,7 @@ const PRODUCT = 'baokuangaixie';
 const COOKIE_NAME = 'qycm_baokuangaixie_sso';
 const SESSION_MAX_AGE_SECONDS = 5 * 60;
 const MAIN_APP_URL_FALLBACK = 'https://www.qycm.top';
+const PUBLIC_BAOKUANGAIXIE_APP_URL = 'https://baokuangaixie.qycm.top';
 
 export type MainAppUser = {
   id: string;
@@ -80,8 +81,8 @@ export function getMainAppUrl(): string {
   return (process.env.MAIN_APP_URL?.trim() || MAIN_APP_URL_FALLBACK).replace(/\/+$/, '');
 }
 
-export function isMainAppSsoRequired(): boolean {
-  return process.env.REQUIRE_MAIN_APP_SSO?.trim().toLowerCase() !== 'false';
+export function getPublicBaokuangaixieAppUrl(): string {
+  return PUBLIC_BAOKUANGAIXIE_APP_URL;
 }
 
 export function getMainAppSsoLaunchUrl(): string {

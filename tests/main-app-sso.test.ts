@@ -5,7 +5,6 @@ import test from 'node:test';
 
 import {
   createMainAppSessionCookie,
-  isMainAppSsoRequired,
   readMainAppSessionCookie,
   safeRedirectPath,
 } from '../src/lib/main-app-sso.ts';
@@ -30,33 +29,24 @@ test('encrypts the main token in a host-only application session', async () => {
   assert.equal(safeRedirectPath('//outside.example'), '/');
 });
 
-test('keeps SSO enabled by default but allows an explicit temporary opt-out', () => {
-  const previous = process.env.REQUIRE_MAIN_APP_SSO;
-  try {
-    delete process.env.REQUIRE_MAIN_APP_SSO;
-    assert.equal(isMainAppSsoRequired(), true);
-
-    process.env.REQUIRE_MAIN_APP_SSO = 'false';
-    assert.equal(isMainAppSsoRequired(), false);
-  } finally {
-    if (previous === undefined) delete process.env.REQUIRE_MAIN_APP_SSO;
-    else process.env.REQUIRE_MAIN_APP_SSO = previous;
-  }
-});
-
 test('callback and proxy do not expose the main token to browser code', async () => {
   const root = process.cwd();
-  const [callback, proxy, helper] = await Promise.all([
+  const [callback, proxy, helper, env] = await Promise.all([
     readFile(path.join(root, 'src/app/api/sso/callback/route.ts'), 'utf8'),
     readFile(path.join(root, 'src/proxy.ts'), 'utf8'),
     readFile(path.join(root, 'src/lib/main-app-sso.ts'), 'utf8'),
+    readFile(path.join(root, '.env.local.example'), 'utf8'),
   ]);
 
   assert.match(callback, /exchangeMainAppSsoTicket/);
+  assert.match(callback, /getPublicBaokuangaixieAppUrl/);
+  assert.match(helper, /https:\/\/baokuangaixie\.qycm\.top/);
   assert.match(helper, /x-qycm-sso-client-secret/);
   assert.match(helper, /httpOnly:\s*true/);
   assert.match(helper, /secure:\s*true/);
   assert.match(helper, /sameSite:\s*'lax'/);
   assert.match(proxy, /validateMainAppSession/);
   assert.match(proxy, /api\/sso\/callback/);
+  assert.doesNotMatch(proxy, /isMainAppSsoRequired/);
+  assert.doesNotMatch(env, /REQUIRE_MAIN_APP_SSO/);
 });

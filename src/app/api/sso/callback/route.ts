@@ -4,6 +4,7 @@ import {
   exchangeMainAppSsoTicket,
   getMainAppSessionCookieName,
   getMainAppSessionCookieOptions,
+  getPublicBaokuangaixieAppUrl,
 } from '@/lib/main-app-sso';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { redirectPath, session } = await exchangeMainAppSsoTicket(ticket);
-    const response = NextResponse.redirect(new URL(redirectPath, request.url));
+    const response = NextResponse.redirect(new URL(redirectPath, getPublicBaokuangaixieAppUrl()));
     response.cookies.set(
       getMainAppSessionCookieName(),
       await createMainAppSessionCookie(session),

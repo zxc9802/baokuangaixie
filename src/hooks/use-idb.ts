@@ -4,23 +4,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { Topic, Product, GeneratedScript } from '@/lib/types';
 import {
-  getTopics,
-  saveTopics as saveTopicsDb,
-  deleteTopic as deleteTopicDb,
-  getProducts,
-  saveProduct as saveProductDb,
-  deleteProduct as deleteProductDb,
-  getScripts,
-  saveScripts as saveScriptsDb,
-  deleteScript as deleteScriptDb,
-} from '@/lib/db';
+  deleteProduct as deleteProductApi,
+  deleteScript as deleteScriptApi,
+  deleteTopic as deleteTopicApi,
+  getProducts as getProductsApi,
+  getScripts as getScriptsApi,
+  getTopics as getTopicsApi,
+  saveProduct as saveProductApi,
+  saveScripts as saveScriptsApi,
+  saveTopics as saveTopicsApi,
+} from '@/lib/api';
 
 export function useTopics() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const data = await getTopics();
+    const { topics: data } = await getTopicsApi();
     setTopics(
       data.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -30,8 +30,8 @@ export function useTopics() {
 
   useEffect(() => {
     let cancelled = false;
-    getTopics()
-      .then((data) => {
+    getTopicsApi()
+      .then(({ topics: data }) => {
         if (cancelled) return;
         setTopics(
           data.sort(
@@ -55,7 +55,7 @@ export function useTopics() {
 
   const saveTopics = useCallback(
     async (items: Topic[]) => {
-      await saveTopicsDb(items);
+      await saveTopicsApi(items);
       await refresh();
       toast.success(`已保存 ${items.length} 条选题`);
     },
@@ -64,7 +64,7 @@ export function useTopics() {
 
   const deleteTopic = useCallback(
     async (id: string) => {
-      await deleteTopicDb(id);
+      await deleteTopicApi(id);
       await refresh();
       toast.success('已删除选题');
     },
@@ -79,7 +79,7 @@ export function useProducts() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const data = await getProducts();
+    const { products: data } = await getProductsApi();
     setProducts(
       data.sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -89,8 +89,8 @@ export function useProducts() {
 
   useEffect(() => {
     let cancelled = false;
-    getProducts()
-      .then((data) => {
+    getProductsApi()
+      .then(({ products: data }) => {
         if (cancelled) return;
         setProducts(
           data.sort(
@@ -114,7 +114,7 @@ export function useProducts() {
 
   const saveProduct = useCallback(
     async (product: Product) => {
-      await saveProductDb(product);
+      await saveProductApi(product);
       await refresh();
       toast.success('已保存产品');
     },
@@ -123,7 +123,7 @@ export function useProducts() {
 
   const deleteProduct = useCallback(
     async (id: string) => {
-      await deleteProductDb(id);
+      await deleteProductApi(id);
       await refresh();
       toast.success('已删除产品');
     },
@@ -138,7 +138,7 @@ export function useScripts() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const data = await getScripts();
+    const { scripts: data } = await getScriptsApi();
     setScripts(
       data.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -148,8 +148,8 @@ export function useScripts() {
 
   useEffect(() => {
     let cancelled = false;
-    getScripts()
-      .then((data) => {
+    getScriptsApi()
+      .then(({ scripts: data }) => {
         if (cancelled) return;
         setScripts(
           data.sort(
@@ -173,7 +173,7 @@ export function useScripts() {
 
   const saveScripts = useCallback(
     async (items: GeneratedScript[]) => {
-      await saveScriptsDb(items);
+      await saveScriptsApi(items);
       await refresh();
       toast.success(`已保存 ${items.length} 条脚本`);
     },
@@ -182,7 +182,7 @@ export function useScripts() {
 
   const deleteScript = useCallback(
     async (id: string) => {
-      await deleteScriptDb(id);
+      await deleteScriptApi(id);
       await refresh();
       toast.success('已删除脚本');
     },

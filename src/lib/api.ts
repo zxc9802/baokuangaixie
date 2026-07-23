@@ -91,3 +91,48 @@ export async function parseProductUpload(file: File): Promise<{
 
   return data;
 }
+
+export function getTopics(): Promise<{ topics: Topic[] }> {
+  return fetchJson('/api/records/topics');
+}
+
+export function saveTopics(topics: Topic[]): Promise<{ topics: Topic[] }> {
+  return fetchJson('/api/records/topics', {
+    method: 'POST',
+    body: JSON.stringify({ topics }),
+  });
+}
+
+export function deleteTopic(id: string): Promise<{ success: true }> {
+  return fetchJson(`/api/records/topics/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function getProducts(): Promise<{ products: Product[] }> {
+  return fetchJson('/api/records/products');
+}
+
+export function saveProduct(product: Product): Promise<{ product: Product }> {
+  return fetchJson('/api/records/products', {
+    method: 'POST',
+    body: JSON.stringify({ product }),
+  });
+}
+
+export function deleteProduct(id: string): Promise<{ success: true }> {
+  return fetchJson(`/api/records/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function getScripts(): Promise<{ scripts: GeneratedScript[] }> {
+  return fetchJson('/api/records/scripts');
+}
+
+export function saveScripts(scripts: GeneratedScript[]): Promise<{ scripts: GeneratedScript[] }> {
+  return fetchJson('/api/records/scripts', {
+    method: 'POST',
+    body: JSON.stringify({ scripts }),
+  });
+}
+
+export function deleteScript(id: string): Promise<{ success: true }> {
+  return fetchJson(`/api/records/scripts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

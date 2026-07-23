@@ -9,6 +9,7 @@ import {
   Trash,
   FileText,
   Sparkle,
+  CaretDown,
 } from '@phosphor-icons/react';
 import { useTopics } from '@/hooks/use-idb';
 import { useProducts } from '@/hooks/use-idb';
@@ -18,7 +19,7 @@ import {
   SCRIPT_LENGTH_OPTIONS,
   type ScriptDurationSeconds,
 } from '@/lib/script-length';
-import { formatScriptParagraphs, formatScriptText } from '@/lib/script-format';
+import { formatScriptRows, formatScriptText } from '@/lib/script-format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,7 @@ export default function ScriptsPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   function toggleTopic(id: string) {
     setSelectedTopics((prev) => {
@@ -85,6 +87,15 @@ export default function ScriptsPage() {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1500);
+  }
+
+  function toggleScript(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   return (
@@ -264,63 +275,180 @@ export default function ScriptsPage() {
               },
             }}
           >
-            {scripts.map((script) => (
-              <motion.div
-                key={script.id}
-                variants={{
-                  hidden: { opacity: 0, y: 6 },
-                  show: { opacity: 1, y: 0 },
-                }}
-              >
-                <Card>
-                  <CardHeader className="flex flex-row items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle>{script.title}</CardTitle>
-                      <CardDescription>{script.angle}</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(formatScriptText(script.script), script.id)
-                        }
+            {scripts.map((script) => {
+              const expanded = expandedIds.has(script.id);
+              const rows = formatScriptRows(script.script);
+              const contentId = `script-content-${script.id}`;
+
+              return (
+                <motion.div
+                  key={script.id}
+                  className="min-w-0"
+                  variants={{
+                    hidden: { opacity: 0, y: 6 },
+                    show: { opacity: 1, y: 0 },
+                  }}
+                >
+                  <Card className="min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="group flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50 md:px-6"
+                        aria-expanded={expanded}
+                        aria-controls={contentId}
+                        onClick={() => toggleScript(script.id)}
                       >
-                        {copiedId === script.id ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-danger hover:bg-danger/10"
-                        onClick={() => deleteScript(script.id)}
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-accent/10 group-hover:text-accent">
+                          <CaretDown
+                            className={`h-4 w-4 transition-transform ${
+                              expanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-base font-medium tracking-tight md:text-lg">
+                          {script.title}
+                        </span>
+                      </button>
+
+                      <div className="mr-4 flex shrink-0 gap-2 md:mr-5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          aria-label={`复制脚本：${script.title}`}
+                          title="复制脚本"
+                          onClick={() =>
+                            handleCopy(formatScriptText(script.script), script.id)
+                          }
+                        >
+                          {copiedId === script.id ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-danger hover:bg-danger/10"
+                          aria-label={`删除脚本：${script.title}`}
+                          title="删除脚本"
+                          onClick={() => deleteScript(script.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {expanded && (
+                      <motion.div
+                        id={contentId}
+                        className="border-t border-border"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.16 }}
                       >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-3 rounded-lg bg-muted/30 p-4 text-sm leading-relaxed">
-                      {formatScriptParagraphs(script.script).map(
-                        (paragraph, index) => (
-                          <p key={`${script.id}-paragraph-${index}`}>
-                            {paragraph}
-                          </p>
-                        )
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {script.productClaimsUsed.map((claim) => (
-                        <Badge key={claim} variant="secondary">{claim}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                        <div className="space-y-4 p-5 md:p-6">
+                          <div className="flex flex-col gap-1 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 sm:flex-row sm:items-start sm:gap-4">
+                            <span className="shrink-0 text-xs font-semibold tracking-wide text-accent">
+                              创作角度
+                            </span>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              {script.angle}
+                            </p>
+                          </div>
+
+                          <div
+                            className="overflow-hidden rounded-lg border border-border text-sm"
+                            role="table"
+                            aria-label={`${script.title}的镜头与文案`}
+                          >
+                            <div
+                              className="hidden bg-muted/60 text-xs font-medium text-muted-foreground md:block"
+                              role="rowgroup"
+                            >
+                              <div
+                                className="grid grid-cols-[minmax(0,34%)_minmax(0,66%)]"
+                                role="row"
+                              >
+                                <div
+                                  className="border-r border-border px-4 py-3"
+                                  role="columnheader"
+                                >
+                                  镜头
+                                </div>
+                                <div className="px-4 py-3" role="columnheader">
+                                  文案
+                                </div>
+                              </div>
+                            </div>
+                            <div className="divide-y divide-border" role="rowgroup">
+                              {rows.map((row, rowIndex) => (
+                                <div
+                                  key={`${script.id}-row-${rowIndex}`}
+                                  className="grid grid-cols-1 md:grid-cols-[minmax(0,34%)_minmax(0,66%)]"
+                                  role="row"
+                                >
+                                  <div
+                                    className="min-w-0 p-4 md:border-r md:border-border"
+                                    role="cell"
+                                  >
+                                    <span className="mb-2 block text-[11px] font-semibold tracking-wide text-muted-foreground md:hidden">
+                                      镜头
+                                    </span>
+                                    <div className="flex items-start gap-3">
+                                      <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded bg-accent/10 px-1.5 font-mono text-[11px] font-semibold text-accent">
+                                        {String(rowIndex + 1).padStart(2, '0')}
+                                      </span>
+                                      <p className="min-w-0 break-words leading-relaxed">
+                                        {row.shot}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div
+                                    className="min-w-0 border-t border-border p-4 md:border-t-0"
+                                    role="cell"
+                                  >
+                                    <span className="mb-2 block text-[11px] font-semibold tracking-wide text-muted-foreground md:hidden">
+                                      文案
+                                    </span>
+                                    {row.copy.length > 0 ? (
+                                      <div className="space-y-2 leading-7">
+                                        {row.copy.map((paragraph, paragraphIndex) => (
+                                          <p
+                                            key={`${script.id}-row-${rowIndex}-paragraph-${paragraphIndex}`}
+                                          >
+                                            {paragraph}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">—</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {script.productClaimsUsed.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="mr-1 text-xs text-muted-foreground">
+                                已使用产品信息
+                              </span>
+                              {script.productClaimsUsed.map((claim) => (
+                                <Badge key={claim} variant="secondary">
+                                  {claim}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </Card>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </div>

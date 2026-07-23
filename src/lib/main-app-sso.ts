@@ -80,6 +80,10 @@ export function getMainAppUrl(): string {
   return (process.env.MAIN_APP_URL?.trim() || MAIN_APP_URL_FALLBACK).replace(/\/+$/, '');
 }
 
+export function isMainAppSsoRequired(): boolean {
+  return process.env.REQUIRE_MAIN_APP_SSO?.trim().toLowerCase() !== 'false';
+}
+
 export function getMainAppSsoLaunchUrl(): string {
   const url = new URL('/home2', getMainAppUrl());
   url.searchParams.set('externalSso', PRODUCT);

@@ -5,6 +5,7 @@ import test from 'node:test';
 
 import {
   createMainAppSessionCookie,
+  isMainAppSsoRequired,
   readMainAppSessionCookie,
   safeRedirectPath,
 } from '../src/lib/main-app-sso.ts';
@@ -27,6 +28,20 @@ test('encrypts the main token in a host-only application session', async () => {
   assert.equal(await readMainAppSessionCookie('invalid'), null);
   assert.equal(safeRedirectPath('/scripts?topic=t1'), '/scripts?topic=t1');
   assert.equal(safeRedirectPath('//outside.example'), '/');
+});
+
+test('keeps SSO enabled by default but allows an explicit temporary opt-out', () => {
+  const previous = process.env.REQUIRE_MAIN_APP_SSO;
+  try {
+    delete process.env.REQUIRE_MAIN_APP_SSO;
+    assert.equal(isMainAppSsoRequired(), true);
+
+    process.env.REQUIRE_MAIN_APP_SSO = 'false';
+    assert.equal(isMainAppSsoRequired(), false);
+  } finally {
+    if (previous === undefined) delete process.env.REQUIRE_MAIN_APP_SSO;
+    else process.env.REQUIRE_MAIN_APP_SSO = previous;
+  }
 });
 
 test('callback and proxy do not expose the main token to browser code', async () => {

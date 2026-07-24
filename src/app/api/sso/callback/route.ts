@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set(
       getMainAppSessionCookieName(),
       await createMainAppSessionCookie(session),
-      getMainAppSessionCookieOptions(),
+      getMainAppSessionCookieOptions(session.expiresAt),
     );
     return response;
   } catch {

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:sso": "node --experimental-strip-types --test tests/main-app-sso.test.ts",
+    "test:sso": "node --experimental-strip-types --test tests/main-app-sso.test.ts tests/main-app-billing.test.ts",
     "test:records": "node --experimental-strip-types --test tests/records-repository.test.ts tests/records-api-contract.test.ts tests/cloud-hooks-contract.test.ts",
     "test:extension": "node --test 抓取脚本/*.test.mjs",
     "package:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1"

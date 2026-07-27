@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  MainAppBillingError,
+  parseGeminiUsage,
+  reserveTextCredits,
+} from '@/lib/main-app-billing';
 
 const DEFAULT_BASE_URL = 'https://yunwu.ai/v1beta';
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
@@ -54,24 +59,21 @@ async function callGemini(
     generationConfig: {
       responseMimeType: 'application/json',
       temperature: 0.3,
+      maxOutputTokens: 8192,
     },
   };
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
+  const estimatedInputTokens = new TextEncoder().encode([
+    system,
+    ...parts.flatMap((part) => 'text' in part ? [part.text] : []),
+  ].join('\n')).length + parts.filter((part) => 'inlineData' in part).length * 4_000;
+  const billing = await reserveTextCredits({
+    operation: 'generate-json',
+    model,
+    estimatedInputTokens,
+    maxOutputTokens: 8192,
   });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(
-      `AI gateway returned ${response.status}: ${text.slice(0, 500)}`
-    );
-  }
-
-  const data = (await response.json()) as {
+  let data: {
     candidates?: Array<{
       content?: {
         parts?: Array<{ text?: string }>;
@@ -80,6 +82,27 @@ async function callGemini(
     }>;
     error?: { message?: string };
   };
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(
+        `AI gateway returned ${response.status}: ${text.slice(0, 500)}`
+      );
+    }
+
+    data = await response.json() as typeof data;
+  } catch (error) {
+    await billing.release();
+    throw error;
+  }
+  await billing.settle(parseGeminiUsage(data));
 
   if (data.error?.message) {
     throw new Error(`AI gateway error: ${data.error.message}`);
@@ -129,6 +152,9 @@ async function generateJsonFromParts<T>(
       return schema.parse(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
+      if (lastError instanceof MainAppBillingError) {
+        throw lastError;
+      }
       if (signal?.aborted) {
         throw lastError;
       }

@@ -1,11 +1,13 @@
 import { nanoid } from 'nanoid';
 import type { BrowserCaptureVideo, CaptureJob, SearchPlan } from '@/lib/types';
 import { runBrowserCapture } from './capture';
+import { runWithMainAppBillingUser } from './main-app-billing';
 
 type CaptureJobsGlobal = typeof globalThis & {
   __videoScriptCaptureJobs?: Map<string, CaptureJob>;
   __videoScriptCaptureJobControllers?: Map<string, AbortController>;
   __videoScriptCaptureJobTokens?: Map<string, string>;
+  __videoScriptCaptureJobOwners?: Map<string, string>;
   __videoScriptCaptureJobsCleanupTimer?: ReturnType<typeof setInterval>;
 };
 
@@ -26,8 +28,11 @@ const controllers =
 const browserTokens =
   captureJobsGlobal.__videoScriptCaptureJobTokens ??
   (captureJobsGlobal.__videoScriptCaptureJobTokens = new Map<string, string>());
+const billingOwners =
+  captureJobsGlobal.__videoScriptCaptureJobOwners ??
+  (captureJobsGlobal.__videoScriptCaptureJobOwners = new Map<string, string>());
 
-export function createJob(plan: SearchPlan): {
+export function createJob(plan: SearchPlan, billingUserId: string): {
   job: CaptureJob;
   browserToken: string;
 } {
@@ -46,6 +51,7 @@ export function createJob(plan: SearchPlan): {
   jobs.set(job.id, job);
   const browserToken = nanoid(40);
   browserTokens.set(job.id, browserToken);
+  billingOwners.set(job.id, billingUserId);
   return { job, browserToken };
 }
 
@@ -95,6 +101,10 @@ export function submitBrowserCapture(
   }
 
   browserTokens.delete(id);
+  const billingUserId = billingOwners.get(id);
+  if (!billingUserId) {
+    throw new Error('抓取任务计费账号不存在或已过期');
+  }
   const controller = new AbortController();
   controllers.set(id, controller);
   updateJob(id, {
@@ -102,7 +112,10 @@ export function submitBrowserCapture(
     progress: 50,
     shortfallReason: `浏览器已提交 ${videos.length} 条候选，正在筛选…`,
   });
-  void runJob(job, controller, videos);
+  void runWithMainAppBillingUser(
+    billingUserId,
+    () => runJob(job, controller, videos),
+  );
   return job;
 }
 
@@ -113,6 +126,7 @@ export function failBrowserCapture(
 ): CaptureJob {
   const job = requireBrowserJob(id, token);
   browserTokens.delete(id);
+  billingOwners.delete(id);
   updateJob(id, {
     phase: 'failed',
     progress: 100,
@@ -136,6 +150,7 @@ export function cancelJob(id: string): CaptureJob | undefined {
         : '抓取已停止。',
   });
   browserTokens.delete(id);
+  billingOwners.delete(id);
   controllers.get(id)?.abort();
   return job;
 }
@@ -158,6 +173,7 @@ async function runJob(
     });
   } finally {
     controllers.delete(job.id);
+    billingOwners.delete(job.id);
   }
 }
 
@@ -179,6 +195,7 @@ export function cleanupOldJobs(maxAgeHours = 24): void {
       controllers.get(id)?.abort();
       controllers.delete(id);
       browserTokens.delete(id);
+      billingOwners.delete(id);
       jobs.delete(id);
     }
   }

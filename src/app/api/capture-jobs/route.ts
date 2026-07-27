@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { CreateCaptureJobSchema } from '@/lib/schemas';
 import { createJob } from '@/lib/jobs';
+import { currentBillingUserId } from '@/lib/main-app-billing';
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const { job, browserToken } = createJob(plan);
+    const { job, browserToken } = createJob(
+      plan,
+      await currentBillingUserId(),
+    );
     return NextResponse.json(
       { jobId: job.id, job, browserToken },
       { status: 202 }

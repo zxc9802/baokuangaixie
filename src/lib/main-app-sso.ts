@@ -86,7 +86,7 @@ export function getMainAppUrl(): string {
 }
 
 export function getPublicBaokuangaixieAppUrl(): string {
-  return PUBLIC_BAOKUANGAIXIE_APP_URL;
+  return (process.env.PUBLIC_APP_URL?.trim() || PUBLIC_BAOKUANGAIXIE_APP_URL).replace(/\/+$/, '');
 }
 
 export function getMainAppSsoLaunchUrl(): string {

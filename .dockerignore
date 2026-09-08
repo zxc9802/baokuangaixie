@@ -11,3 +11,7 @@ docs
 0).join('
 n.includes('video')
 npm-debug.log*
+
+# Server-side usage report outbox (contains employee IDs).
+.usage-outbox/
+**/.usage-outbox/

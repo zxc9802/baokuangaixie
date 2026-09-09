@@ -1,3 +1,6 @@
+const usageFetch: typeof fetch = async (url, init) => meteredFetch(url, init, isUsageReportingEnabled() ? await currentBillingUserId() : undefined);
+import { meteredFetch, isUsageReportingEnabled } from "@/lib/main-usage";
+import { currentBillingUserId } from "@/lib/main-app-billing";
 import { z } from 'zod';
 import {
   MainAppBillingError,
@@ -83,7 +86,7 @@ async function callGemini(
     error?: { message?: string };
   };
   try {
-    const response = await fetch(url, {
+    const response = await usageFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

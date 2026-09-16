@@ -11,8 +11,8 @@ test('rewrite validation retries report each completed model call separately', a
  const directory=await mkdtemp(join(tmpdir(),'rewrite-usage-')); const originalFetch=globalThis.fetch,originalEnv={...process.env};const reports=[],bills=[];let attempts=0;
  Object.assign(process.env,{USAGE_MONITOR_INTERNAL_SECRET:'test',USAGE_MONITOR_OUTBOX_DIR:directory,MAIN_APP_URL:'https://main.test',MAIN_APP_SSO_CLIENT_SECRET:'test',AI_GATEWAY_BASE_URL:'https://api.openlux.ai/v1beta',AI_GATEWAY_API_KEY:'private'});
  globalThis.fetch=async(url,init)=>{
-  if(String(url).endsWith('/api/sso/usage')) {reports.push(JSON.parse(init.body));return Response.json({});}
-  if(String(url).endsWith('/api/sso/billing')) {bills.push(JSON.parse(init.body));return Response.json({});}
+  if(String(url).endsWith('/api/sso/usage')) {reports.push(JSON.parse(init.body));return Response.json({success:true});}
+  if(String(url).endsWith('/api/sso/billing')) {bills.push(JSON.parse(init.body));return Response.json({success:true});}
   attempts++;return Response.json({candidates:[{content:{parts:[{text:attempts===1?'not-json':'{"ok":true}'}]},finishReason:'STOP'}],usageMetadata:{promptTokenCount:20,candidatesTokenCount:10,thoughtsTokenCount:2,cachedContentTokenCount:5}});
  };
  try {

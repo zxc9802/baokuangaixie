@@ -1,6 +1,9 @@
+import { usageReporter } from '@/lib/usage-monitor';
+import { providerHostname, responseStatus } from '@/lib/openlux-usage';
 import { z } from 'zod';
 import {
   MainAppBillingError,
+  currentBillingUserId,
   parseGeminiUsage,
   reserveTextCredits,
 } from '@/lib/main-app-billing';
@@ -69,10 +72,14 @@ async function callGemini(
   ].join('\n')).length + parts.filter((part) => 'inlineData' in part).length * 4_000;
   const billing = await reserveTextCredits({
     operation: 'generate-json',
+    providerId: providerHostname(url),
+    usageReportedSeparately: await usageReporter.ready(url),
     model,
     estimatedInputTokens,
     maxOutputTokens: 8192,
   });
+  const usageCall = usageReporter.enabled(url)
+    ? await usageReporter.begin({ url, model, userId: await currentBillingUserId() }) : null;
   let data: {
     candidates?: Array<{
       content?: {
@@ -98,7 +105,9 @@ async function callGemini(
     }
 
     data = await response.json() as typeof data;
+    await usageCall?.finish(responseStatus(response.status, data), data, response.headers.get('x-request-id'));
   } catch (error) {
+    await usageCall?.finish('failed');
     await billing.release();
     throw error;
   }
